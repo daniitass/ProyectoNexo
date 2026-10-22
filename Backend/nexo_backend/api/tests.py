@@ -527,8 +527,9 @@ class AutenticacionClienteTests(TestCase):
 		)
 		self.assertEqual(response_sin_token.status_code, 403)
 
-		cliente_csrf.get(reverse('csrf-token'))
-		csrf_token = cliente_csrf.cookies['csrftoken'].value
+		respuesta_csrf = cliente_csrf.get(reverse('csrf-token'))
+		csrf_token = respuesta_csrf.json()['csrfToken']
+		self.assertTrue(csrf_token)
 		response_con_token = cliente_csrf.post(
 			url,
 			data=self.datos_registro,
