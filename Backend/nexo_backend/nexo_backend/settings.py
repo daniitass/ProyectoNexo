@@ -12,7 +12,6 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import os
-from urllib.parse import urlsplit
 
 from django.core.exceptions import ImproperlyConfigured
 
@@ -37,39 +36,19 @@ if not DEBUG and not os.environ.get('SECRET_KEY'):
 
 ALLOWED_HOSTS = ['.onrender.com', 'localhost', '127.0.0.1']
 
-frontend_url = os.environ.get('FRONTEND_URL', '').strip()
-if frontend_url:
-    parsed_frontend_url = urlsplit(frontend_url)
-    if (
-        parsed_frontend_url.scheme not in {'http', 'https'}
-        or not parsed_frontend_url.netloc
-        or parsed_frontend_url.path not in {'', '/'}
-        or parsed_frontend_url.query
-        or parsed_frontend_url.fragment
-    ):
-        raise ImproperlyConfigured(
-            'FRONTEND_URL must be the frontend origin, such as https://your-app.onrender.com.'
-        )
-    frontend_origin = f'{parsed_frontend_url.scheme}://{parsed_frontend_url.netloc}'
-else:
-    frontend_origin = None
-
 trusted_origins = [
     'http://localhost:5173',
     'http://127.0.0.1:5173',
 ]
-if frontend_origin:
-    trusted_origins.append(frontend_origin)
-
 CSRF_TRUSTED_ORIGINS = trusted_origins
 
 CORS_ALLOWED_ORIGINS = trusted_origins
 CORS_ALLOW_CREDENTIALS = True
 
-# Frontend and backend are separate origins, so credentialed API requests need cross-site cookies.
-SESSION_COOKIE_SAMESITE = 'None' if not DEBUG else 'Lax'
+# Production serves the frontend and API from the same origin.
+SESSION_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_SECURE = not DEBUG
-CSRF_COOKIE_SAMESITE = 'None' if not DEBUG else 'Lax'
+CSRF_COOKIE_SAMESITE = 'Lax'
 CSRF_COOKIE_SECURE = not DEBUG
 
 # Application definition
@@ -166,6 +145,8 @@ USE_TZ = True
 
 STATIC_URL = 'static/'
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+FRONTEND_DIST = BASE_DIR.parent.parent / 'Frontend' / 'nexofrontend' / 'dist'
+STATICFILES_DIRS = [FRONTEND_DIST] if FRONTEND_DIST.is_dir() else []
 STORAGES = {
     'default': {
         'BACKEND': 'django.core.files.storage.FileSystemStorage',
